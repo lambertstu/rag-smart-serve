@@ -150,14 +150,14 @@ service KnowledgeService {
   rpc GetKnowledgeBase(GetKnowledgeBaseReq) returns (GetKnowledgeBaseResp);
   rpc DeleteKnowledgeBase(DeleteKnowledgeBaseReq) returns (DeleteKnowledgeBaseResp);
 
-  rpc CreateDocument(CreateDocumentReq) returns (CreateDocumentResp);
-  rpc ListDocuments(ListDocumentsReq) returns (ListDocumentsResp);
-  rpc GetDocument(GetDocumentReq) returns (GetDocumentResp);
-  rpc UpdateDocumentStatus(UpdateDocumentStatusReq) returns (UpdateDocumentStatusResp);
-  rpc DeleteDocument(DeleteDocumentReq) returns (DeleteDocumentResp);
-
-  rpc SaveChunks(SaveChunksReq) returns (SaveChunksResp);
-  rpc DeleteChunks(DeleteChunksReq) returns (DeleteChunksResp);
+//  rpc CreateDocument(CreateDocumentReq) returns (CreateDocumentResp);
+//  rpc ListDocuments(ListDocumentsReq) returns (ListDocumentsResp);
+//  rpc GetDocument(GetDocumentReq) returns (GetDocumentResp);
+//  rpc UpdateDocumentStatus(UpdateDocumentStatusReq) returns (UpdateDocumentStatusResp);
+//  rpc DeleteDocument(DeleteDocumentReq) returns (DeleteDocumentResp);
+//
+//  rpc SaveChunks(SaveChunksReq) returns (SaveChunksResp);
+//  rpc DeleteChunks(DeleteChunksReq) returns (DeleteChunksResp);
 }
 
 

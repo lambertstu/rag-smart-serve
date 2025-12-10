@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"rag-smart-serve/pkg/constant"
+	"rag-smart-serve/pkg/etcd"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,15 +15,23 @@ import (
 )
 
 var (
-	// globalClient 保存默认的 MongoDB 客户端实例
 	globalClient *mongo.Client
+	mu           sync.RWMutex
 
-	ErrClientNotInit = errors.New("mongo client not initialized")
-	ErrNotFound      = mongo.ErrNoDocuments
+	ErrNotFound = mongo.ErrNoDocuments
 )
 
-// Init 初始化全局 MongoDB 客户端
+// Init 初始化 MongoDB 客户端
+// 这是一个可选操作，如果不显式调用，第一次使用时会尝试连接默认配置
 func Init(uri string, opts ...*options.ClientOptions) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	// 如果已经初始化，先断开旧连接
+	if globalClient != nil {
+		_ = globalClient.Disconnect(context.Background())
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -40,62 +51,118 @@ func Init(uri string, opts ...*options.ClientOptions) error {
 	return nil
 }
 
+// ensureInitialized 确保 client 已初始化
+func ensureInitialized() (*mongo.Client, error) {
+	mu.RLock()
+	if globalClient != nil {
+		client := globalClient
+		mu.RUnlock()
+		return client, nil
+	}
+	mu.RUnlock()
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if globalClient != nil {
+		return globalClient, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	defaultURI, err := etcd.GetValue(ctx, constant.MongoKey)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(defaultURI))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to default mongo at %s: %w", defaultURI, err)
+	}
+	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(context.Background())
+		return nil, fmt.Errorf("failed to ping default mongo: %w", err)
+	}
+
+	globalClient = client
+	return globalClient, nil
+}
+
 func SetClient(client *mongo.Client) {
+	mu.Lock()
+	defer mu.Unlock()
 	globalClient = client
 }
 
 func GetClient() *mongo.Client {
+	mu.RLock()
+	defer mu.RUnlock()
 	return globalClient
 }
 
 func Close(ctx context.Context) error {
+	mu.Lock()
+	defer mu.Unlock()
 	if globalClient != nil {
-		return globalClient.Disconnect(ctx)
+		err := globalClient.Disconnect(ctx)
+		globalClient = nil
+		return err
 	}
 	return nil
 }
 
-// MongoManager 是一个用于 MongoDB 操作的通用管理器
 type MongoManager[T any] struct {
-	collection *mongo.Collection
+	dbName         string
+	collectionName string
+	// collection 字段移除，改为动态获取
 }
 
-// NewMongoManager 创建类型 T 的 MongoManager 新实例
+// NewMongoManager 创建一个新的 MongoManager
+// 注意：这里不再 panic，而是存储配置信息，在真正操作时才获取连接
 func NewMongoManager[T any](dbName, collectionName string) *MongoManager[T] {
-	if globalClient == nil {
-		panic(ErrClientNotInit)
-	}
 	return &MongoManager[T]{
-		collection: globalClient.Database(dbName).Collection(collectionName),
+		dbName:         dbName,
+		collectionName: collectionName,
 	}
 }
 
-// NewMongoManagerWithClient 使用特定客户端创建一个新实例
-func NewMongoManagerWithClient[T any](client *mongo.Client, dbName, collectionName string) *MongoManager[T] {
-	return &MongoManager[T]{
-		collection: client.Database(dbName).Collection(collectionName),
+// getCollection 获取集合对象，包含懒加载逻辑
+func (m *MongoManager[T]) getCollection() (*mongo.Collection, error) {
+	client, err := ensureInitialized()
+	if err != nil {
+		return nil, err
 	}
+	return client.Database(m.dbName).Collection(m.collectionName), nil
 }
 
-// InsertOne 插入单个文档
 func (m *MongoManager[T]) InsertOne(ctx context.Context, doc *T) (*mongo.InsertOneResult, error) {
-	return m.collection.InsertOne(ctx, doc)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.InsertOne(ctx, doc)
 }
 
-// InsertMany 插入多个文档
 func (m *MongoManager[T]) InsertMany(ctx context.Context, docs []*T) (*mongo.InsertManyResult, error) {
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
 	// 将 []*T 转换为 []interface{}
 	interfaceDocs := make([]interface{}, len(docs))
 	for i, v := range docs {
 		interfaceDocs[i] = v
 	}
-	return m.collection.InsertMany(ctx, interfaceDocs)
+	return coll.InsertMany(ctx, interfaceDocs)
 }
 
-// FindOne 查找匹配过滤条件的单个文档
 func (m *MongoManager[T]) FindOne(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) (*T, error) {
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
 	var result T
-	err := m.collection.FindOne(ctx, filter, opts...).Decode(&result)
+	err = coll.FindOne(ctx, filter, opts...).Decode(&result)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
@@ -105,9 +172,12 @@ func (m *MongoManager[T]) FindOne(ctx context.Context, filter interface{}, opts 
 	return &result, nil
 }
 
-// FindMany 查找匹配过滤条件的多个文档
 func (m *MongoManager[T]) FindMany(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*T, error) {
-	cursor, err := m.collection.Find(ctx, filter, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := coll.Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -120,39 +190,60 @@ func (m *MongoManager[T]) FindMany(ctx context.Context, filter interface{}, opts
 	return results, nil
 }
 
-// UpdateOne 更新单个文档
 func (m *MongoManager[T]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return m.collection.UpdateOne(ctx, filter, update, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.UpdateOne(ctx, filter, update, opts...)
 }
 
-// UpdateMany 更新多个文档
 func (m *MongoManager[T]) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return m.collection.UpdateMany(ctx, filter, update, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.UpdateMany(ctx, filter, update, opts...)
 }
 
-// ReplaceOne 替换单个文档
 func (m *MongoManager[T]) ReplaceOne(ctx context.Context, filter interface{}, replacement *T, opts ...*options.ReplaceOptions) (*mongo.UpdateResult, error) {
-	return m.collection.ReplaceOne(ctx, filter, replacement, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.ReplaceOne(ctx, filter, replacement, opts...)
 }
 
-// DeleteOne 删除单个文档
 func (m *MongoManager[T]) DeleteOne(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return m.collection.DeleteOne(ctx, filter, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.DeleteOne(ctx, filter, opts...)
 }
 
-// DeleteMany 删除多个文档
 func (m *MongoManager[T]) DeleteMany(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return m.collection.DeleteMany(ctx, filter, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.DeleteMany(ctx, filter, opts...)
 }
 
-// Count 返回匹配过滤条件的文档数量
 func (m *MongoManager[T]) Count(ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error) {
-	return m.collection.CountDocuments(ctx, filter, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return 0, err
+	}
+	return coll.CountDocuments(ctx, filter, opts...)
 }
 
-// Aggregate 执行聚合管道
 func (m *MongoManager[T]) Aggregate(ctx context.Context, pipeline interface{}, opts ...*options.AggregateOptions) ([]*T, error) {
-	cursor, err := m.collection.Aggregate(ctx, pipeline, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := coll.Aggregate(ctx, pipeline, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,17 +256,43 @@ func (m *MongoManager[T]) Aggregate(ctx context.Context, pipeline interface{}, o
 	return results, nil
 }
 
-// BulkWrite 执行通用的批量操作
 func (m *MongoManager[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
-	return m.collection.BulkWrite(ctx, models, opts...)
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.BulkWrite(ctx, models, opts...)
 }
 
-// GetCollection 返回底层的 mongo.Collection 以供高级用法使用
-func (m *MongoManager[T]) GetCollection() *mongo.Collection {
-	return m.collection
+// GetCollection 获取原生集合对象 (如果未初始化，会尝试初始化)
+func (m *MongoManager[T]) GetCollection() (*mongo.Collection, error) {
+	return m.getCollection()
 }
 
-// FindByID 是通过 _id 查找的辅助函数。它假设 _id 是 ObjectID 类型或 id 字段中提供的字符串。
 func (m *MongoManager[T]) FindByID(ctx context.Context, id interface{}) (*T, error) {
 	return m.FindOne(ctx, bson.M{"_id": id})
+}
+
+// CreateIndex 创建单个索引
+// keys: 索引键，例如 bson.D{{"field1", 1}, {"field2", -1}}
+// unique: 是否唯一索引
+func (m *MongoManager[T]) CreateIndex(ctx context.Context, keys interface{}, unique bool) (string, error) {
+	coll, err := m.getCollection()
+	if err != nil {
+		return "", err
+	}
+	model := mongo.IndexModel{
+		Keys:    keys,
+		Options: options.Index().SetUnique(unique),
+	}
+	return coll.Indexes().CreateOne(ctx, model)
+}
+
+// CreateIndexes 批量创建索引
+func (m *MongoManager[T]) CreateIndexes(ctx context.Context, models []mongo.IndexModel) ([]string, error) {
+	coll, err := m.getCollection()
+	if err != nil {
+		return nil, err
+	}
+	return coll.Indexes().CreateMany(ctx, models)
 }

@@ -21,18 +21,8 @@ type TestUser struct {
 }
 
 func TestMongoManager(t *testing.T) {
-	endpoints := []string{"localhost:2379"}
-	client, err := etcd.NewClient(endpoints, 5*time.Second)
-	if err != nil {
-		t.Logf("Skipping test: failed to connect to etcd at %v: %v", endpoints, err)
-		return
-	}
-	defer client.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	uri, err := client.GetValue(ctx, constant.MongoKey)
+	ctx := context.Background()
+	uri, err := etcd.GetValue(ctx, constant.MongoKey)
 	err = Init(uri)
 	if err != nil {
 		t.Logf("Skipping test: failed to connect to mongo at %s: %v", uri, err)

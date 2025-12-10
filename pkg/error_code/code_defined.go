@@ -20,6 +20,7 @@ var (
 	ServiceBusyError    = NewBaseErrorCode("B001010", "系统繁忙")
 	DatabaseError       = NewBaseErrorCode("B001020", "数据库操作异常")
 	CacheError          = NewBaseErrorCode("B001021", "缓存操作异常")
+	DataTypeError       = NewBaseErrorCode("B001030", "数据类型转换错误")
 
 	// C: 第三方调用错误
 	RemoteServiceError = NewBaseErrorCode("C000001", "调用第三方服务失败")
