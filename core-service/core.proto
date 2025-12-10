@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package core;
+
+option go_package = "./core";
+
+message ChatReq {}
+
+message ChatResp {}
+
+message SearchReq {}
+
+message SearchResp {}
+
+service RagService {
+  // 核心对话接口（检索+生成完整流程，90%场景使用）
+  rpc Chat(ChatReq) returns (ChatResp);
+
+  // 单独检索接口（仅检索不生成，用于智能提示、知识库测试等场景）
+  rpc Search(SearchReq) returns (SearchResp);
+}
+
+
+message DetectIntentReq {}
+
+message DetectIntentResp {}
+
+message ClassifyMessageReq {}
+
+message ClassifyMessageResp {}
+
+message ExtractSlotsReq {}
+
+message ExtractSlotsResp {}
+
+service IntentService {
+  // 识别用户意图
+  rpc DetectIntent(DetectIntentReq) returns (DetectIntentResp);
+  
+  // 消息分类（快速分类：咨询/投诉/闲聊等）
+  rpc ClassifyMessage(ClassifyMessageReq) returns (ClassifyMessageResp);
+  
+  // 提取槽位信息（NER）
+  rpc ExtractSlots(ExtractSlotsReq) returns (ExtractSlotsResp);
+}
+
+message AnalyzeEmotionReq {
+  string user_input = 1;
+}
+
+message AnalyzeEmotionResp {
+  string emotionType = 1;
+  float score = 2;
+  int32 risk_level = 3;
+  string suggestion = 4;
+  string reason = 5;
+}
+
+message DetectRiskReq {}
+
+message DetectRiskResp {}
+
+message ContentModerationReq {
+}
+
+message ContentModerationResp {
+}
+
+service EmotionService {
+  // 分析用户情绪
+  rpc AnalyzeEmotion(AnalyzeEmotionReq) returns (AnalyzeEmotionResp);
+  
+  // 风险预警检测（检测高危用户）
+  rpc DetectRisk(DetectRiskReq) returns (DetectRiskResp);
+  
+  // 内容合规审核（支持双向审核：用户输入 + AI输出）
+  rpc ContentModeration(ContentModerationReq) returns (ContentModerationResp);
+}
+
+// ==================== 路由服务 ====================
+
+message RouteReq {}
+
+message RouteResp {}
+
+message TransferToHumanReq {}
+
+message TransferToHumanResp {}
+
+message GetRoutingStrategyReq {}
+
+message GetRoutingStrategyResp {}
+
+service RoutingService {
+  // 路由决策（AI继续 or 转人工）
+  rpc Route(RouteReq) returns (RouteResp);
+  
+  // 转人工客服
+  rpc TransferToHuman(TransferToHumanReq) returns (TransferToHumanResp);
+  
+  // 获取路由策略配置
+  rpc GetRoutingStrategy(GetRoutingStrategyReq) returns (GetRoutingStrategyResp);
+}
+
+// ==================== Prompt 模板管理服务 ====================
+
+message GetTemplateReq {}
+
+message GetTemplateResp {}
+
+message ListTemplatesReq {}
+
+message ListTemplatesResp {}
+
+message CreateTemplateReq {}
+
+message CreateTemplateResp {}
+
+message UpdateTemplateReq {}
+
+message UpdateTemplateResp {}
+
+message DeleteTemplateReq {}
+
+message DeleteTemplateResp {}
+
+message RenderTemplateReq {}
+
+message RenderTemplateResp {}
+
+service PromptService {
+  // 获取单个模板
+  rpc GetTemplate(GetTemplateReq) returns (GetTemplateResp);
+  
+  // 获取模板列表
+  rpc ListTemplates(ListTemplatesReq) returns (ListTemplatesResp);
+  
+  // 创建模板
+  rpc CreateTemplate(CreateTemplateReq) returns (CreateTemplateResp);
+  
+  // 更新模板
+  rpc UpdateTemplate(UpdateTemplateReq) returns (UpdateTemplateResp);
+  
+  // 删除模板
+  rpc DeleteTemplate(DeleteTemplateReq) returns (DeleteTemplateResp);
+  
+  // 渲染模板（填充变量）
+  rpc RenderTemplate(RenderTemplateReq) returns (RenderTemplateResp);
+}

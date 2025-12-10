@@ -1,0 +1,377 @@
+syntax = "v1"
+
+import "./common/common.api"
+
+info(
+	title: "智能客服 RAG 系统网关"
+	desc: "基于 RAG 的多语言智能客服系统 API 网关"
+	author: "dev"
+	version: "v1.0"
+)
+
+// ==================== 类型定义 ====================
+
+// 认证相关
+type (
+	LoginReq {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		LoginType string `json:"login_type,optional,options=password|sms|wechat"` // 登录方式
+	}
+
+	LoginResp {
+		AccessToken string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn int64 `json:"expires_in"`
+		UserInfo UserInfo `json:"user_info"`
+	}
+
+	RefreshTokenReq {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	RefreshTokenResp {
+		AccessToken string `json:"access_token"`
+		ExpiresIn int64 `json:"expires_in"`
+	}
+
+	UserInfo {
+		UserId string `json:"user_id"`
+		Username string `json:"username"`
+		Role string `json:"role"` // admin|agent|user
+		TenantId string `json:"tenant_id,optional"`
+	}
+)
+
+// 聊天对话相关
+type (
+	ChatReq {
+		Message string `json:"message"`
+		SessionId string `json:"session_id,optional"` // 会话ID，用于多轮对话
+		Stream bool `json:"stream,optional"` // 是否流式输出
+		KnowledgeBaseId string `json:"knowledge_base_id,optional"` // 指定知识库
+		Options ChatOptions `json:"options,optional"`
+	}
+
+	ChatOptions {
+		Temperature float64 `json:"temperature,optional,default=0.7"`
+		MaxTokens int `json:"max_tokens,optional,default=2000"`
+		Language string `json:"language,optional,default=zh"` // zh|en|ja|es
+	}
+
+	ChatResp {
+		SessionId string `json:"session_id"`
+		Message string `json:"message"`
+		MessageId string `json:"message_id"`
+		Intent string `json:"intent,optional"` // 识别的意图
+		Emotion EmotionInfo `json:"emotion,optional"` // 情绪分析结果
+		Sources []Source `json:"sources,optional"` // RAG 检索到的来源
+		NeedHumanAgent bool `json:"need_human_agent"` // 是否需要转人工
+		Timestamp int64 `json:"timestamp"`
+	}
+
+	EmotionInfo {
+		Type string `json:"type"` // positive|neutral|negative|angry
+		Score float64 `json:"score"`
+		Reason string `json:"reason,optional"`
+	}
+
+	Source {
+		DocumentId string `json:"document_id"`
+		DocumentName string `json:"document_name"`
+		ChunkId string `json:"chunk_id"`
+		Content string `json:"content"`
+		Score float64 `json:"score"` // 相似度分数
+	}
+)
+
+// 会话管理相关
+type (
+	SessionListReq {
+		Page int `form:"page,default=1"`
+		PageSize int `form:"page_size,default=20"`
+		Status string `form:"status,optional,options=active|closed|transferred"` // 会话状态
+	}
+
+	SessionListResp {
+		Total int64 `json:"total"`
+		Sessions []SessionInfo `json:"sessions"`
+	}
+
+	SessionInfo {
+		SessionId string `json:"session_id"`
+		UserId string `json:"user_id"`
+		Status string `json:"status"`
+		MessageCount int `json:"message_count"`
+		CreatedAt int64 `json:"created_at"`
+		UpdatedAt int64 `json:"updated_at"`
+		AgentId string `json:"agent_id,optional"` // 人工客服ID
+	}
+
+	SessionHistoryReq {
+		SessionId string `path:"session_id"`
+		Page int `form:"page,default=1"`
+		PageSize int `form:"page_size,default=50"`
+	}
+
+	SessionHistoryResp {
+		SessionId string `json:"session_id"`
+		Messages []Message `json:"messages"`
+		Total int64 `json:"total"`
+	}
+
+	Message {
+		MessageId string `json:"message_id"`
+		Role string `json:"role"` // user|assistant|system
+		Content string `json:"content"`
+		Timestamp int64 `json:"timestamp"`
+		Feedback string `json:"feedback,optional"` // like|dislike
+	}
+)
+
+// 知识库管理相关
+type (
+	KnowledgeBaseCreateReq {
+		Name string `json:"name"`
+		Description string `json:"description,optional"`
+		EmbeddingModel string `json:"embedding_model,optional,default=text-embedding-3-small"`
+		Language string `json:"language,optional,default=zh"`
+	}
+
+	KnowledgeBaseCreateResp {
+		KnowledgeBaseId string `json:"knowledge_base_id"`
+		Name string `json:"name"`
+		CreatedAt int64 `json:"created_at"`
+	}
+
+	KnowledgeBaseListReq {
+		Page int `form:"page,default=1"`
+		PageSize int `form:"page_size,default=20"`
+	}
+
+	KnowledgeBaseListResp {
+		Total int64 `json:"total"`
+		KnowledgeBases []KnowledgeBaseInfo `json:"knowledge_bases"`
+	}
+
+	KnowledgeBaseInfo {
+		KnowledgeBaseId string `json:"knowledge_base_id"`
+		Name string `json:"name"`
+		Description string `json:"description"`
+		DocumentCount int `json:"document_count"`
+		ChunkCount int `json:"chunk_count"`
+		Status string `json:"status"` // active|indexing|error
+		CreatedAt int64 `json:"created_at"`
+		UpdatedAt int64 `json:"updated_at"`
+	}
+
+	DocumentUploadReq {
+		KnowledgeBaseId string `form:"knowledge_base_id"`
+		// File 会通过 multipart/form-data 上传，go-zero 会自动处理
+	}
+
+	DocumentUploadResp {
+		DocumentId string `json:"document_id"`
+		FileName string `json:"file_name"`
+		Status string `json:"status"` // pending|processing|completed|failed
+		Message string `json:"message,optional"`
+	}
+
+	DocumentListReq {
+		KnowledgeBaseId string `form:"knowledge_base_id"`
+		Page int `form:"page,default=1"`
+		PageSize int `form:"page_size,default=20"`
+	}
+
+	DocumentListResp {
+		Total int64 `json:"total"`
+		Documents []DocumentInfo `json:"documents"`
+	}
+
+	DocumentInfo {
+		DocumentId string `json:"document_id"`
+		FileName string `json:"file_name"`
+		FileSize int64 `json:"file_size"`
+		Status string `json:"status"`
+		ChunkCount int `json:"chunk_count"`
+		UploadedAt int64 `json:"uploaded_at"`
+		ProcessedAt int64 `json:"processed_at,optional"`
+	}
+
+	DocumentDeleteReq {
+		DocumentId string `path:"document_id"`
+	}
+)
+
+// Prompt 管理相关（管理员功能）
+type (
+	PromptTemplateCreateReq {
+		Name string `json:"name"`
+		Content string `json:"content"`
+		Description string `json:"description,optional"`
+		Variables []string `json:"variables,optional"` // 模板变量，如 {{user_name}}
+		Category string `json:"category,optional"` // greeting|faq|complaint|default
+	}
+
+	PromptTemplateCreateResp {
+		TemplateId string `json:"template_id"`
+		Version string `json:"version"`
+		CreatedAt int64 `json:"created_at"`
+	}
+
+	PromptTemplateListReq {
+		Category string `form:"category,optional"`
+		Page int `form:"page,default=1"`
+		PageSize int `form:"page_size,default=20"`
+	}
+
+	PromptTemplateListResp {
+		Total int64 `json:"total"`
+		Templates []PromptTemplateInfo `json:"templates"`
+	}
+
+	PromptTemplateInfo {
+		TemplateId string `json:"template_id"`
+		Name string `json:"name"`
+		Content string `json:"content"`
+		Version string `json:"version"`
+		Category string `json:"category"`
+		IsActive bool `json:"is_active"`
+		Performance float64 `json:"performance,optional"` // A/B 测试评分
+		CreatedAt int64 `json:"created_at"`
+		UpdatedAt int64 `json:"updated_at"`
+	}
+
+	PromptTemplateUpdateReq {
+		TemplateId string `path:"template_id"`
+		Content string `json:"content,optional"`
+		IsActive bool `json:"is_active,optional"`
+	}
+)
+
+// 数据分析相关
+type (
+	AnalyticsOverviewReq {
+		StartTime int64 `form:"start_time"`
+		EndTime int64 `form:"end_time"`
+	}
+
+	AnalyticsOverviewResp {
+		TotalSessions int64 `json:"total_sessions"`
+		TotalMessages int64 `json:"total_messages"`
+		AvgResponseTime float64 `json:"avg_response_time"` // 毫秒
+		UserSatisfaction float64 `json:"user_satisfaction"` // 0-1
+		IntentAccuracy float64 `json:"intent_accuracy"` // 意图识别准确率
+		HumanHandoffRate float64 `json:"human_handoff_rate"` // 转人工率
+		TopIntents []IntentStat `json:"top_intents"`
+	}
+
+	IntentStat {
+		Intent string `json:"intent"`
+		Count int64 `json:"count"`
+		Percentage float64 `json:"percentage"`
+	}
+
+	FeedbackSubmitReq {
+		MessageId string `json:"message_id"`
+		SessionId string `json:"session_id"`
+		Feedback string `json:"feedback"` // like|dislike
+		Comment string `json:"comment,optional"`
+	}
+)
+
+// ==================== 服务定义 ====================
+
+// 1. 认证服务（无需 JWT）
+@server(
+	prefix: /api/v1/auth
+)
+service gateway {
+	@doc "用户登录"
+	@handler login
+	post /login (LoginReq) returns (LoginResp)
+	
+	@doc "刷新 Token"
+	@handler refreshToken
+	post /refresh (RefreshTokenReq) returns (RefreshTokenResp)
+}
+
+// 2. 聊天服务（需要 JWT）
+@server(
+	prefix: /api/v1/chat
+	middleware: Auth
+)
+service gateway {
+	@doc "发送聊天消息"
+	@handler chat
+	post /message (ChatReq) returns (ChatResp)
+	
+	@doc "获取会话列表"
+	@handler sessionList
+	get /sessions (SessionListReq) returns (SessionListResp)
+	
+	@doc "获取会话历史"
+	@handler sessionHistory
+	get /sessions/:session_id/history (SessionHistoryReq) returns (SessionHistoryResp)
+	
+	@doc "提交用户反馈"
+	@handler submitFeedback
+	post /feedback (FeedbackSubmitReq)
+}
+
+// 3. 知识库管理（需要 JWT + Admin 权限）
+@server(
+	prefix: /api/v1/knowledge
+	middleware: Auth,AdminAuth
+)
+service gateway {
+	@doc "创建知识库"
+	@handler createKnowledgeBase
+	post /bases (KnowledgeBaseCreateReq) returns (KnowledgeBaseCreateResp)
+	
+	@doc "获取知识库列表"
+	@handler listKnowledgeBases
+	get /bases (KnowledgeBaseListReq) returns (KnowledgeBaseListResp)
+	
+	@doc "上传文档"
+	@handler uploadDocument
+	post /documents/upload (DocumentUploadReq) returns (DocumentUploadResp)
+	
+	@doc "获取文档列表"
+	@handler listDocuments
+	get /documents (DocumentListReq) returns (DocumentListResp)
+	
+	@doc "删除文档"
+	@handler deleteDocument
+	delete /documents/:document_id (DocumentDeleteReq)
+}
+
+// 4. Prompt 管理（需要 JWT + Admin 权限）
+@server(
+	prefix: /api/v1/prompts
+	middleware: Auth,AdminAuth
+)
+service gateway {
+	@doc "创建 Prompt 模板"
+	@handler createPromptTemplate
+	post / (PromptTemplateCreateReq) returns (PromptTemplateCreateResp)
+	
+	@doc "获取 Prompt 模板列表"
+	@handler listPromptTemplates
+	get / (PromptTemplateListReq) returns (PromptTemplateListResp)
+	
+	@doc "更新 Prompt 模板"
+	@handler updatePromptTemplate
+	put /:template_id (PromptTemplateUpdateReq)
+}
+
+// 5. 数据分析（需要 JWT + Admin 权限）
+@server(
+	prefix: /api/v1/analytics
+	middleware: Auth,AdminAuth
+)
+service gateway {
+	@doc "获取数据概览"
+	@handler getOverview
+	get /overview (AnalyticsOverviewReq) returns (AnalyticsOverviewResp)
+}
