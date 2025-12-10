@@ -35,8 +35,6 @@ func TestMongoManager(t *testing.T) {
 	collName := "users"
 	manager := NewMongoManager[TestUser](dbName, collName)
 
-	_ = manager.GetCollection().Drop(ctx)
-
 	// 3. 测试插入 (InsertOne)
 	user1 := &TestUser{
 		Username:  "alice",
