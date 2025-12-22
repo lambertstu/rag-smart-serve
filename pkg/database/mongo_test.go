@@ -33,7 +33,7 @@ func TestMongoManager(t *testing.T) {
 	// 2. 创建 Manager
 	dbName := "test_db"
 	collName := "users"
-	manager := NewMongoManager[TestUser](dbName, collName)
+	manager := NewMongoManager[TestUser](uri, dbName, collName)
 
 	// 3. 测试插入 (InsertOne)
 	user1 := &TestUser{

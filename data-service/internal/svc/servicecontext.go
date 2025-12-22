@@ -15,6 +15,6 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:         c,
-		KnowledgeModel: database.NewMongoManager[data_service.KnowledgeDao](constant.DataServiceDB, constant.KnowledgeCollection),
+		KnowledgeModel: database.NewMongoManager[data_service.KnowledgeDao]("", constant.DataServiceDB, constant.KnowledgeCollection),
 	}
 }

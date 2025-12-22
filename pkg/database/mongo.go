@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"rag-smart-serve/pkg/constant"
-	"rag-smart-serve/pkg/etcd"
 	"sync"
 	"time"
 
@@ -18,11 +16,12 @@ var (
 	globalClient *mongo.Client
 	mu           sync.RWMutex
 
+	clients   = make(map[string]*mongo.Client)
+	clientsMu sync.RWMutex
+
 	ErrNotFound = mongo.ErrNoDocuments
 )
 
-// Init 初始化 MongoDB 客户端
-// 这是一个可选操作，如果不显式调用，第一次使用时会尝试连接默认配置
 func Init(uri string, opts ...*options.ClientOptions) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -51,41 +50,49 @@ func Init(uri string, opts ...*options.ClientOptions) error {
 	return nil
 }
 
-// ensureInitialized 确保 client 已初始化
 func ensureInitialized() (*mongo.Client, error) {
 	mu.RLock()
-	if globalClient != nil {
-		client := globalClient
-		mu.RUnlock()
+	defer mu.RUnlock()
+	if globalClient == nil {
+		return nil, errors.New("global mongo client not initialized")
+	}
+	return globalClient, nil
+}
+
+func getClient(uri string) (*mongo.Client, error) {
+	if uri == "" {
+		return ensureInitialized()
+	}
+
+	clientsMu.RLock()
+	if client, ok := clients[uri]; ok {
+		clientsMu.RUnlock()
 		return client, nil
 	}
-	mu.RUnlock()
+	clientsMu.RUnlock()
 
-	mu.Lock()
-	defer mu.Unlock()
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
 
-	if globalClient != nil {
-		return globalClient, nil
+	if client, ok := clients[uri]; ok {
+		return client, nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	defaultURI, err := etcd.GetValue(ctx, constant.MongoKey)
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to mongo at %s: %w", uri, err)
 	}
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(defaultURI))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to default mongo at %s: %w", defaultURI, err)
-	}
 	if err := client.Ping(ctx, nil); err != nil {
 		_ = client.Disconnect(context.Background())
-		return nil, fmt.Errorf("failed to ping default mongo: %w", err)
+		return nil, fmt.Errorf("failed to ping mongo: %w", err)
 	}
 
-	globalClient = client
-	return globalClient, nil
+	clients[uri] = client
+	return client, nil
 }
 
 func SetClient(client *mongo.Client) {
@@ -101,12 +108,27 @@ func GetClient() *mongo.Client {
 }
 
 func Close(ctx context.Context) error {
+	var errs []error
 	mu.Lock()
-	defer mu.Unlock()
 	if globalClient != nil {
-		err := globalClient.Disconnect(ctx)
+		if err := globalClient.Disconnect(ctx); err != nil {
+			errs = append(errs, err)
+		}
 		globalClient = nil
-		return err
+	}
+	mu.Unlock()
+
+	clientsMu.Lock()
+	for uri, client := range clients {
+		if err := client.Disconnect(ctx); err != nil {
+			errs = append(errs, err)
+		}
+		delete(clients, uri)
+	}
+	clientsMu.Unlock()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to close some mongo clients: %v", errs)
 	}
 	return nil
 }
@@ -114,21 +136,19 @@ func Close(ctx context.Context) error {
 type MongoManager[T any] struct {
 	dbName         string
 	collectionName string
-	// collection 字段移除，改为动态获取
+	uri            string
 }
 
-// NewMongoManager 创建一个新的 MongoManager
-// 注意：这里不再 panic，而是存储配置信息，在真正操作时才获取连接
-func NewMongoManager[T any](dbName, collectionName string) *MongoManager[T] {
+func NewMongoManager[T any](uri, dbName, collectionName string) *MongoManager[T] {
 	return &MongoManager[T]{
+		uri:            uri,
 		dbName:         dbName,
 		collectionName: collectionName,
 	}
 }
 
-// getCollection 获取集合对象，包含懒加载逻辑
 func (m *MongoManager[T]) getCollection() (*mongo.Collection, error) {
-	client, err := ensureInitialized()
+	client, err := getClient(m.uri)
 	if err != nil {
 		return nil, err
 	}
