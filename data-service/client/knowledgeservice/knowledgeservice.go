@@ -39,12 +39,20 @@ type (
 	SaveChunksResp           = data.SaveChunksResp
 	UpdateDocumentStatusReq  = data.UpdateDocumentStatusReq
 	UpdateDocumentStatusResp = data.UpdateDocumentStatusResp
+	UpdateKnowledgeBaseReq   = data.UpdateKnowledgeBaseReq
+	UpdateKnowledgeBaseResp  = data.UpdateKnowledgeBaseResp
 
 	KnowledgeService interface {
 		CreateKnowledgeBase(ctx context.Context, in *CreateKnowledgeBaseReq, opts ...grpc.CallOption) (*CreateKnowledgeBaseResp, error)
 		ListKnowledgeBases(ctx context.Context, in *ListKnowledgeBasesReq, opts ...grpc.CallOption) (*ListKnowledgeBasesResp, error)
 		GetKnowledgeBase(ctx context.Context, in *GetKnowledgeBaseReq, opts ...grpc.CallOption) (*GetKnowledgeBaseResp, error)
+		UpdateKnowledgeBase(ctx context.Context, in *UpdateKnowledgeBaseReq, opts ...grpc.CallOption) (*UpdateKnowledgeBaseResp, error)
 		DeleteKnowledgeBase(ctx context.Context, in *DeleteKnowledgeBaseReq, opts ...grpc.CallOption) (*DeleteKnowledgeBaseResp, error)
+		CreateDocument(ctx context.Context, in *CreateDocumentReq, opts ...grpc.CallOption) (*CreateDocumentResp, error)
+		ListDocuments(ctx context.Context, in *ListDocumentsReq, opts ...grpc.CallOption) (*ListDocumentsResp, error)
+		GetDocument(ctx context.Context, in *GetDocumentReq, opts ...grpc.CallOption) (*GetDocumentResp, error)
+		UpdateDocumentStatus(ctx context.Context, in *UpdateDocumentStatusReq, opts ...grpc.CallOption) (*UpdateDocumentStatusResp, error)
+		DeleteDocument(ctx context.Context, in *DeleteDocumentReq, opts ...grpc.CallOption) (*DeleteDocumentResp, error)
 	}
 
 	defaultKnowledgeService struct {
@@ -73,7 +81,37 @@ func (m *defaultKnowledgeService) GetKnowledgeBase(ctx context.Context, in *GetK
 	return client.GetKnowledgeBase(ctx, in, opts...)
 }
 
+func (m *defaultKnowledgeService) UpdateKnowledgeBase(ctx context.Context, in *UpdateKnowledgeBaseReq, opts ...grpc.CallOption) (*UpdateKnowledgeBaseResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.UpdateKnowledgeBase(ctx, in, opts...)
+}
+
 func (m *defaultKnowledgeService) DeleteKnowledgeBase(ctx context.Context, in *DeleteKnowledgeBaseReq, opts ...grpc.CallOption) (*DeleteKnowledgeBaseResp, error) {
 	client := data.NewKnowledgeServiceClient(m.cli.Conn())
 	return client.DeleteKnowledgeBase(ctx, in, opts...)
+}
+
+func (m *defaultKnowledgeService) CreateDocument(ctx context.Context, in *CreateDocumentReq, opts ...grpc.CallOption) (*CreateDocumentResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.CreateDocument(ctx, in, opts...)
+}
+
+func (m *defaultKnowledgeService) ListDocuments(ctx context.Context, in *ListDocumentsReq, opts ...grpc.CallOption) (*ListDocumentsResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.ListDocuments(ctx, in, opts...)
+}
+
+func (m *defaultKnowledgeService) GetDocument(ctx context.Context, in *GetDocumentReq, opts ...grpc.CallOption) (*GetDocumentResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.GetDocument(ctx, in, opts...)
+}
+
+func (m *defaultKnowledgeService) UpdateDocumentStatus(ctx context.Context, in *UpdateDocumentStatusReq, opts ...grpc.CallOption) (*UpdateDocumentStatusResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.UpdateDocumentStatus(ctx, in, opts...)
+}
+
+func (m *defaultKnowledgeService) DeleteDocument(ctx context.Context, in *DeleteDocumentReq, opts ...grpc.CallOption) (*DeleteDocumentResp, error) {
+	client := data.NewKnowledgeServiceClient(m.cli.Conn())
+	return client.DeleteDocument(ctx, in, opts...)
 }

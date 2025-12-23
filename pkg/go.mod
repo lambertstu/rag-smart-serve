@@ -5,6 +5,7 @@ go 1.24
 toolchain go1.24.11
 
 require (
+	github.com/pkg/errors v0.9.1
 	go.etcd.io/etcd/client/v3 v3.6.6
 	go.mongodb.org/mongo-driver v1.17.6
 )

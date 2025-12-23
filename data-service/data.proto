@@ -40,6 +40,17 @@ message GetKnowledgeBaseResp {
   KnowledgeBase knowledge_base = 1;
 }
 
+message UpdateKnowledgeBaseReq {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string embedding_model = 4;
+}
+
+message UpdateKnowledgeBaseResp {
+  bool success = 1;
+}
+
 message DeleteKnowledgeBaseReq {
   string id = 1;
 }
@@ -148,14 +159,15 @@ service KnowledgeService {
   rpc CreateKnowledgeBase(CreateKnowledgeBaseReq) returns (CreateKnowledgeBaseResp);
   rpc ListKnowledgeBases(ListKnowledgeBasesReq) returns (ListKnowledgeBasesResp);
   rpc GetKnowledgeBase(GetKnowledgeBaseReq) returns (GetKnowledgeBaseResp);
+  rpc UpdateKnowledgeBase(UpdateKnowledgeBaseReq) returns (UpdateKnowledgeBaseResp);
   rpc DeleteKnowledgeBase(DeleteKnowledgeBaseReq) returns (DeleteKnowledgeBaseResp);
 
-//  rpc CreateDocument(CreateDocumentReq) returns (CreateDocumentResp);
-//  rpc ListDocuments(ListDocumentsReq) returns (ListDocumentsResp);
-//  rpc GetDocument(GetDocumentReq) returns (GetDocumentResp);
-//  rpc UpdateDocumentStatus(UpdateDocumentStatusReq) returns (UpdateDocumentStatusResp);
-//  rpc DeleteDocument(DeleteDocumentReq) returns (DeleteDocumentResp);
-//
+  rpc CreateDocument(CreateDocumentReq) returns (CreateDocumentResp);
+  rpc ListDocuments(ListDocumentsReq) returns (ListDocumentsResp);
+  rpc GetDocument(GetDocumentReq) returns (GetDocumentResp);
+  rpc UpdateDocumentStatus(UpdateDocumentStatusReq) returns (UpdateDocumentStatusResp);
+  rpc DeleteDocument(DeleteDocumentReq) returns (DeleteDocumentResp);
+
 //  rpc SaveChunks(SaveChunksReq) returns (SaveChunksResp);
 //  rpc DeleteChunks(DeleteChunksReq) returns (DeleteChunksResp);
 }

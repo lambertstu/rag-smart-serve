@@ -19,10 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KnowledgeService_CreateKnowledgeBase_FullMethodName = "/data.KnowledgeService/CreateKnowledgeBase"
-	KnowledgeService_ListKnowledgeBases_FullMethodName  = "/data.KnowledgeService/ListKnowledgeBases"
-	KnowledgeService_GetKnowledgeBase_FullMethodName    = "/data.KnowledgeService/GetKnowledgeBase"
-	KnowledgeService_DeleteKnowledgeBase_FullMethodName = "/data.KnowledgeService/DeleteKnowledgeBase"
+	KnowledgeService_CreateKnowledgeBase_FullMethodName  = "/data.KnowledgeService/CreateKnowledgeBase"
+	KnowledgeService_ListKnowledgeBases_FullMethodName   = "/data.KnowledgeService/ListKnowledgeBases"
+	KnowledgeService_GetKnowledgeBase_FullMethodName     = "/data.KnowledgeService/GetKnowledgeBase"
+	KnowledgeService_UpdateKnowledgeBase_FullMethodName  = "/data.KnowledgeService/UpdateKnowledgeBase"
+	KnowledgeService_DeleteKnowledgeBase_FullMethodName  = "/data.KnowledgeService/DeleteKnowledgeBase"
+	KnowledgeService_CreateDocument_FullMethodName       = "/data.KnowledgeService/CreateDocument"
+	KnowledgeService_ListDocuments_FullMethodName        = "/data.KnowledgeService/ListDocuments"
+	KnowledgeService_GetDocument_FullMethodName          = "/data.KnowledgeService/GetDocument"
+	KnowledgeService_UpdateDocumentStatus_FullMethodName = "/data.KnowledgeService/UpdateDocumentStatus"
+	KnowledgeService_DeleteDocument_FullMethodName       = "/data.KnowledgeService/DeleteDocument"
 )
 
 // KnowledgeServiceClient is the client API for KnowledgeService service.
@@ -32,7 +38,13 @@ type KnowledgeServiceClient interface {
 	CreateKnowledgeBase(ctx context.Context, in *CreateKnowledgeBaseReq, opts ...grpc.CallOption) (*CreateKnowledgeBaseResp, error)
 	ListKnowledgeBases(ctx context.Context, in *ListKnowledgeBasesReq, opts ...grpc.CallOption) (*ListKnowledgeBasesResp, error)
 	GetKnowledgeBase(ctx context.Context, in *GetKnowledgeBaseReq, opts ...grpc.CallOption) (*GetKnowledgeBaseResp, error)
+	UpdateKnowledgeBase(ctx context.Context, in *UpdateKnowledgeBaseReq, opts ...grpc.CallOption) (*UpdateKnowledgeBaseResp, error)
 	DeleteKnowledgeBase(ctx context.Context, in *DeleteKnowledgeBaseReq, opts ...grpc.CallOption) (*DeleteKnowledgeBaseResp, error)
+	CreateDocument(ctx context.Context, in *CreateDocumentReq, opts ...grpc.CallOption) (*CreateDocumentResp, error)
+	ListDocuments(ctx context.Context, in *ListDocumentsReq, opts ...grpc.CallOption) (*ListDocumentsResp, error)
+	GetDocument(ctx context.Context, in *GetDocumentReq, opts ...grpc.CallOption) (*GetDocumentResp, error)
+	UpdateDocumentStatus(ctx context.Context, in *UpdateDocumentStatusReq, opts ...grpc.CallOption) (*UpdateDocumentStatusResp, error)
+	DeleteDocument(ctx context.Context, in *DeleteDocumentReq, opts ...grpc.CallOption) (*DeleteDocumentResp, error)
 }
 
 type knowledgeServiceClient struct {
@@ -73,10 +85,70 @@ func (c *knowledgeServiceClient) GetKnowledgeBase(ctx context.Context, in *GetKn
 	return out, nil
 }
 
+func (c *knowledgeServiceClient) UpdateKnowledgeBase(ctx context.Context, in *UpdateKnowledgeBaseReq, opts ...grpc.CallOption) (*UpdateKnowledgeBaseResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateKnowledgeBaseResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_UpdateKnowledgeBase_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *knowledgeServiceClient) DeleteKnowledgeBase(ctx context.Context, in *DeleteKnowledgeBaseReq, opts ...grpc.CallOption) (*DeleteKnowledgeBaseResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteKnowledgeBaseResp)
 	err := c.cc.Invoke(ctx, KnowledgeService_DeleteKnowledgeBase_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeServiceClient) CreateDocument(ctx context.Context, in *CreateDocumentReq, opts ...grpc.CallOption) (*CreateDocumentResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDocumentResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_CreateDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeServiceClient) ListDocuments(ctx context.Context, in *ListDocumentsReq, opts ...grpc.CallOption) (*ListDocumentsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDocumentsResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_ListDocuments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeServiceClient) GetDocument(ctx context.Context, in *GetDocumentReq, opts ...grpc.CallOption) (*GetDocumentResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDocumentResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_GetDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeServiceClient) UpdateDocumentStatus(ctx context.Context, in *UpdateDocumentStatusReq, opts ...grpc.CallOption) (*UpdateDocumentStatusResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateDocumentStatusResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_UpdateDocumentStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeServiceClient) DeleteDocument(ctx context.Context, in *DeleteDocumentReq, opts ...grpc.CallOption) (*DeleteDocumentResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteDocumentResp)
+	err := c.cc.Invoke(ctx, KnowledgeService_DeleteDocument_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +162,13 @@ type KnowledgeServiceServer interface {
 	CreateKnowledgeBase(context.Context, *CreateKnowledgeBaseReq) (*CreateKnowledgeBaseResp, error)
 	ListKnowledgeBases(context.Context, *ListKnowledgeBasesReq) (*ListKnowledgeBasesResp, error)
 	GetKnowledgeBase(context.Context, *GetKnowledgeBaseReq) (*GetKnowledgeBaseResp, error)
+	UpdateKnowledgeBase(context.Context, *UpdateKnowledgeBaseReq) (*UpdateKnowledgeBaseResp, error)
 	DeleteKnowledgeBase(context.Context, *DeleteKnowledgeBaseReq) (*DeleteKnowledgeBaseResp, error)
+	CreateDocument(context.Context, *CreateDocumentReq) (*CreateDocumentResp, error)
+	ListDocuments(context.Context, *ListDocumentsReq) (*ListDocumentsResp, error)
+	GetDocument(context.Context, *GetDocumentReq) (*GetDocumentResp, error)
+	UpdateDocumentStatus(context.Context, *UpdateDocumentStatusReq) (*UpdateDocumentStatusResp, error)
+	DeleteDocument(context.Context, *DeleteDocumentReq) (*DeleteDocumentResp, error)
 	mustEmbedUnimplementedKnowledgeServiceServer()
 }
 
@@ -110,8 +188,26 @@ func (UnimplementedKnowledgeServiceServer) ListKnowledgeBases(context.Context, *
 func (UnimplementedKnowledgeServiceServer) GetKnowledgeBase(context.Context, *GetKnowledgeBaseReq) (*GetKnowledgeBaseResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKnowledgeBase not implemented")
 }
+func (UnimplementedKnowledgeServiceServer) UpdateKnowledgeBase(context.Context, *UpdateKnowledgeBaseReq) (*UpdateKnowledgeBaseResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateKnowledgeBase not implemented")
+}
 func (UnimplementedKnowledgeServiceServer) DeleteKnowledgeBase(context.Context, *DeleteKnowledgeBaseReq) (*DeleteKnowledgeBaseResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteKnowledgeBase not implemented")
+}
+func (UnimplementedKnowledgeServiceServer) CreateDocument(context.Context, *CreateDocumentReq) (*CreateDocumentResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDocument not implemented")
+}
+func (UnimplementedKnowledgeServiceServer) ListDocuments(context.Context, *ListDocumentsReq) (*ListDocumentsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDocuments not implemented")
+}
+func (UnimplementedKnowledgeServiceServer) GetDocument(context.Context, *GetDocumentReq) (*GetDocumentResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDocument not implemented")
+}
+func (UnimplementedKnowledgeServiceServer) UpdateDocumentStatus(context.Context, *UpdateDocumentStatusReq) (*UpdateDocumentStatusResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDocumentStatus not implemented")
+}
+func (UnimplementedKnowledgeServiceServer) DeleteDocument(context.Context, *DeleteDocumentReq) (*DeleteDocumentResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDocument not implemented")
 }
 func (UnimplementedKnowledgeServiceServer) mustEmbedUnimplementedKnowledgeServiceServer() {}
 func (UnimplementedKnowledgeServiceServer) testEmbeddedByValue()                          {}
@@ -188,6 +284,24 @@ func _KnowledgeService_GetKnowledgeBase_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KnowledgeService_UpdateKnowledgeBase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateKnowledgeBaseReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).UpdateKnowledgeBase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_UpdateKnowledgeBase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).UpdateKnowledgeBase(ctx, req.(*UpdateKnowledgeBaseReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _KnowledgeService_DeleteKnowledgeBase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteKnowledgeBaseReq)
 	if err := dec(in); err != nil {
@@ -202,6 +316,96 @@ func _KnowledgeService_DeleteKnowledgeBase_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KnowledgeServiceServer).DeleteKnowledgeBase(ctx, req.(*DeleteKnowledgeBaseReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeService_CreateDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDocumentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).CreateDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_CreateDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).CreateDocument(ctx, req.(*CreateDocumentReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeService_ListDocuments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDocumentsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).ListDocuments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_ListDocuments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).ListDocuments(ctx, req.(*ListDocumentsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeService_GetDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDocumentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).GetDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_GetDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).GetDocument(ctx, req.(*GetDocumentReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeService_UpdateDocumentStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDocumentStatusReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).UpdateDocumentStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_UpdateDocumentStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).UpdateDocumentStatus(ctx, req.(*UpdateDocumentStatusReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeService_DeleteDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDocumentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeServiceServer).DeleteDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeService_DeleteDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeServiceServer).DeleteDocument(ctx, req.(*DeleteDocumentReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -226,8 +430,32 @@ var KnowledgeService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KnowledgeService_GetKnowledgeBase_Handler,
 		},
 		{
+			MethodName: "UpdateKnowledgeBase",
+			Handler:    _KnowledgeService_UpdateKnowledgeBase_Handler,
+		},
+		{
 			MethodName: "DeleteKnowledgeBase",
 			Handler:    _KnowledgeService_DeleteKnowledgeBase_Handler,
+		},
+		{
+			MethodName: "CreateDocument",
+			Handler:    _KnowledgeService_CreateDocument_Handler,
+		},
+		{
+			MethodName: "ListDocuments",
+			Handler:    _KnowledgeService_ListDocuments_Handler,
+		},
+		{
+			MethodName: "GetDocument",
+			Handler:    _KnowledgeService_GetDocument_Handler,
+		},
+		{
+			MethodName: "UpdateDocumentStatus",
+			Handler:    _KnowledgeService_UpdateDocumentStatus_Handler,
+		},
+		{
+			MethodName: "DeleteDocument",
+			Handler:    _KnowledgeService_DeleteDocument_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

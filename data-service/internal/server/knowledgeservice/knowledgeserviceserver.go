@@ -38,7 +38,37 @@ func (s *KnowledgeServiceServer) GetKnowledgeBase(ctx context.Context, in *data.
 	return l.GetKnowledgeBase(in)
 }
 
+func (s *KnowledgeServiceServer) UpdateKnowledgeBase(ctx context.Context, in *data.UpdateKnowledgeBaseReq) (*data.UpdateKnowledgeBaseResp, error) {
+	l := knowledgeservicelogic.NewUpdateKnowledgeBaseLogic(ctx, s.svcCtx)
+	return l.UpdateKnowledgeBase(in)
+}
+
 func (s *KnowledgeServiceServer) DeleteKnowledgeBase(ctx context.Context, in *data.DeleteKnowledgeBaseReq) (*data.DeleteKnowledgeBaseResp, error) {
 	l := knowledgeservicelogic.NewDeleteKnowledgeBaseLogic(ctx, s.svcCtx)
 	return l.DeleteKnowledgeBase(in)
+}
+
+func (s *KnowledgeServiceServer) CreateDocument(ctx context.Context, in *data.CreateDocumentReq) (*data.CreateDocumentResp, error) {
+	l := knowledgeservicelogic.NewCreateDocumentLogic(ctx, s.svcCtx)
+	return l.CreateDocument(in)
+}
+
+func (s *KnowledgeServiceServer) ListDocuments(ctx context.Context, in *data.ListDocumentsReq) (*data.ListDocumentsResp, error) {
+	l := knowledgeservicelogic.NewListDocumentsLogic(ctx, s.svcCtx)
+	return l.ListDocuments(in)
+}
+
+func (s *KnowledgeServiceServer) GetDocument(ctx context.Context, in *data.GetDocumentReq) (*data.GetDocumentResp, error) {
+	l := knowledgeservicelogic.NewGetDocumentLogic(ctx, s.svcCtx)
+	return l.GetDocument(in)
+}
+
+func (s *KnowledgeServiceServer) UpdateDocumentStatus(ctx context.Context, in *data.UpdateDocumentStatusReq) (*data.UpdateDocumentStatusResp, error) {
+	l := knowledgeservicelogic.NewUpdateDocumentStatusLogic(ctx, s.svcCtx)
+	return l.UpdateDocumentStatus(in)
+}
+
+func (s *KnowledgeServiceServer) DeleteDocument(ctx context.Context, in *data.DeleteDocumentReq) (*data.DeleteDocumentResp, error) {
+	l := knowledgeservicelogic.NewDeleteDocumentLogic(ctx, s.svcCtx)
+	return l.DeleteDocument(in)
 }
