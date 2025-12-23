@@ -1,4 +1,4 @@
-package sdk
+package llm
 
 import (
 	"rag-smart-serve/pkg/constant"
