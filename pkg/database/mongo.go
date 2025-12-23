@@ -284,6 +284,15 @@ func (m *MongoManager[T]) BulkWrite(ctx context.Context, models []mongo.WriteMod
 	return coll.BulkWrite(ctx, models, opts...)
 }
 
+// GetDatabase 获取数据库对象
+func (m *MongoManager[T]) GetDatabase() (*mongo.Database, error) {
+	client, err := getClient(m.uri)
+	if err != nil {
+		return nil, err
+	}
+	return client.Database(m.dbName), nil
+}
+
 // GetCollection 获取原生集合对象 (如果未初始化，会尝试初始化)
 func (m *MongoManager[T]) GetCollection() (*mongo.Collection, error) {
 	return m.getCollection()
