@@ -8,7 +8,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"rag-smart-serve/pkg/constant"
 	customErr "rag-smart-serve/pkg/error_code"
-	"rag-smart-serve/pkg/sdk"
+	"rag-smart-serve/pkg/sdk/llm"
 )
 
 type AnalyzeEmotionLogic struct {
@@ -28,7 +28,7 @@ func NewAnalyzeEmotionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *An
 // 分析用户情绪
 func (receiver *AnalyzeEmotionLogic) AnalyzeEmotion(in *core.AnalyzeEmotionReq) (*core.AnalyzeEmotionResp, error) {
 	resp, err := receiver.svcCtx.ApiClient.Generate(
-		sdk.OllamaGenerateReq{
+		llm.OllamaGenerateReq{
 			Model:  constant.EmotionModel,
 			Prompt: in.UserInput,
 			Stream: false,
@@ -37,7 +37,7 @@ func (receiver *AnalyzeEmotionLogic) AnalyzeEmotion(in *core.AnalyzeEmotionReq) 
 		return nil, customErr.EmotionAnalyzeError.WithError(err)
 	}
 
-	var output sdk.EmotionOutput
+	var output llm.EmotionOutput
 	err = json.Unmarshal([]byte(resp.Response), &output)
 	if err != nil {
 		return nil, customErr.EmotionOutputError
